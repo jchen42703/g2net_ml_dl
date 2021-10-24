@@ -40,11 +40,18 @@ A simple kernel restart will update your changes, so you won't need to reinstall
 ## Using the Neural network on HPC
 
 Move all of the files to related to the network onto HPC and then find the environment.yaml file.
+There is an error in the environment.yaml file and you will need to vim into it and comment out
+```
+  - pytorch=1.9.0=py3.7_cuda11.1_cudnn8.0.5_0
+
+```
 To run it and set up the environement run the following commands:
 ```
 module load miniconda3/4.9.2
 conda env create -n kumaconda -f=environment.yaml
 conda activate kumaconda
+module load python-modules/3.7.0-gcc
+pip install pytorch=1.9.0
 ```
 Prep network with
 ```
