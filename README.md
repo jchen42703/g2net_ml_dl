@@ -34,3 +34,60 @@ os.getcwd()
 ```
 
 A simple kernel restart will update your changes, so you won't need to reinstall the library with `pip install .`
+
+
+
+## Using the Neural network on HPC
+
+Move all of the files to related to the network onto HPC and then find the environment.yaml file.
+There is an error in the environment.yaml file and you will need to vim into it and comment out
+```
+  - pytorch=1.9.0=py3.7_cuda11.1_cudnn8.0.5_0
+
+```
+To run it and set up the environement run the following commands:
+```
+module load miniconda3/4.9.2
+conda env create -n kumaconda -f=environment.yaml
+conda activate kumaconda
+module load python-modules/3.7.0-gcc
+pip install pytorch=1.9.0
+```
+Prep network with
+```
+python prep_data.py
+```
+To train the network: 
+
+```
+python train.py --config nspec_23_arch_3
+```
+
+For output, we will use g2net-submission.ipynb, put it will need to be edited as our version will
+be only using one part of this scheme. More specifically, we will have to edit 
+```
+prediction_list = [
+    RESULT_DIR/'pseudo_12',
+    RESULT_DIR/'pseudo_seq_04',
+    RESULT_DIR/'pseudo_13',
+    RESULT_DIR/'pseudo_14',
+    RESULT_DIR/'pseudo_seq_07',
+    RESULT_DIR/'pseudo_16',
+    RESULT_DIR/'pseudo_17',
+    RESULT_DIR/'pseudo_18',
+    RESULT_DIR/'pseudo_19',
+    RESULT_DIR/'pseudo_21',
+    RESULT_DIR/'pseudo_23',
+    # 
+    RESULT_DIR/'pseudo_24',
+    RESULT_DIR/'pseudo_10',
+    RESULT_DIR/'pseudo_26',
+    RESULT_DIR/'pseudo_25',
+    RESULT_DIR/'pseudo_07',
+    RESULT_DIR/'pseudo_22',
+    RESULT_DIR/'pseudo_15',
+    RESULT_DIR/'pseudo_seq_03',
+    RESULT_DIR/'pseudo_06',
+]
+```
+since we will not have these files, but only one of them.
