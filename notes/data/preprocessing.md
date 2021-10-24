@@ -24,6 +24,22 @@ From: https://www.kaggle.com/mistag/data-preprocessing-with-gwpy
 - DL Part: https://www.kaggle.com/c/g2net-gravitational-wave-detection/discussion/275476
 - Preprocessing Part: https://www.kaggle.com/c/g2net-gravitational-wave-detection/discussion/275507
 
+## Preprocessing
+
+- Butterworth filter
+- double application (filtfilt) of 5th order high-pass filter with critical frequency at 20.43Hz
+
+  - can freely decrease order down to 2 and critical frequency down to 15Hz as soon as NN training got some traction, but no real performance benefits
+
+- any additional filtering PSD of data was obtained using a modified Welch method
+- skipped whitening
+- In the 1D approach NN should derive filters from data and we had no tangible way to "preload" it with a calculated Matched Filter bank, so why bother.
+  - whitening is equivalent to applying an arbitrary frequency-domain filter and would mess up portions of a signal.
+- In general, pipeline first and last few seconds of a signal was just discarded, but few seconds are all we have here.
+- Later in competition we found a way to “expand” a signal enough to apply whitening, but at that point we felt no need to use it, as separate encoders kicked in.
+
+## Make Some Noise
+
 ## Improved Conv1D model (0.883 public LB)
 
 ...
@@ -63,6 +79,8 @@ qtransform_params={"sr": 2048, "fmin": 30, "fmax": 400, "hop_length": 4,
 - https://www.kaggle.com/allunia/signal-where-are-you
 - https://www.kaggle.com/headsortails/when-stars-collide-g2net-eda
 - https://www.kaggle.com/yasufuminakama/g2net-efficientnet-b7-baseline-training
+- Learnable CQT
+  - https://www.kaggle.com/c/g2net-gravitational-wave-detection/discussion/275318
 
 # Notable Resources
 
@@ -71,3 +89,4 @@ qtransform_params={"sr": 2048, "fmin": 30, "fmax": 400, "hop_length": 4,
   - https://www.gw-openscience.org/tutorials/
   - https://www.gw-openscience.org/software/
   - https://iopscience.iop.org/article/10.1088/1361-6382/ab685e
+- https://github.com/analokmaus/kaggle-g2net-public
