@@ -4,6 +4,10 @@ Large doc for notes on preprocessing.
 
 - Should primarily be on methods used in the kaggle challenge
 
+# 2nd Place Solution
+
+- Bandpass filter to all networks. [16, 512] for CWT-CNN and Trainable frontend CNN, [30, 300] for 1d-CNN. Whitening did not work.
+
 # Data Preprocessing with GWPy
 
 From: https://www.kaggle.com/mistag/data-preprocessing-with-gwpy
