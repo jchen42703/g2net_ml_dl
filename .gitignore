@@ -15,3 +15,13 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+
+# General
+nohup.out
+.DS_Store
+
+# Package specific
+/catboost_info/
+
+# Project
+/datasets/
