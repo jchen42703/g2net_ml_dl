@@ -6,6 +6,12 @@
 11 	Pseudo17 	Nspec23arch3 	CNN 	efficientnet-b6 	128 x 1024 	0.87982 	0.8823 	0.8808
 ```
 
+DL Model Pipeline:
+
+```
+CNNSpectrogram --> Resizing --> `tf_efficientnet_b6_ns`
+```
+
 ---
 
 ```
