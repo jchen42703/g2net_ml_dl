@@ -45,6 +45,10 @@ There is an error in the environment.yaml file and you will need to vim into it 
   - pytorch=1.9.0=py3.7_cuda11.1_cudnn8.0.5_0
 
 ```
+And another to:
+```
+    - timm==0.4.12
+```
 To run it and set up the environement run the following commands:
 ```
 module load miniconda3/4.9.2
