@@ -53,9 +53,9 @@ To run it and set up the environement run the following commands:
 ```
 module load miniconda3/4.9.2
 conda env create -n kumaconda -f=environment.yaml
+bash
 conda activate kumaconda
-module load python-modules/3.7.0-gcc
-pip install pytorch=1.9.0
+conda install pytorch=1.9.0=py3.7_cuda11.1_cudnn8.0.5_0
 ```
 Prep network with
 ```
