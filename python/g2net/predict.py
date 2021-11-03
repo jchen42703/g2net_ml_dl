@@ -1,5 +1,5 @@
 import torch
-from .filter import FilterModel
+from g2net.models.filter import FilterModel
 
 
 def BaselineModel():
