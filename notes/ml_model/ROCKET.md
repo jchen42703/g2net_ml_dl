@@ -5,6 +5,17 @@
 - [`sktime` implementation of Rocket](https://www.sktime.org/en/stable/api_reference/auto_generated/sktime.classification.kernel_based.ROCKETClassifier.html#sktime.classification.kernel_based.ROCKETClassifier)
 - Uses random convolutional kernels to extract features --> classifies
 
+## TLDR
+
+Trains very quickly. Not too sure about the inference time.
+
+- Uses random convolutional kernels and the results of a dot prod similar to neural network linear layers --> ppv + pooling --> classifier (sigmoid or ridge) to get results
+- **Still need to do testing to actually see how well it works for our use case.**
+  - Use `torch` implementations to train for our dataset because it's big
+  - https://github.com/timeseriesAI/tsai/blob/main/tutorial_nbs/10_Time_Series_Classification_and_Regression_with_MiniRocket.ipynb
+  - https://github.com/timeseriesAI/tsai
+    - Can look this for other options if rocket/minirocket are no bueno
+
 ## Random Convolutional Kernels
 
 - It may be that learning 'good' kernels is difficult on small datasets. Random convolutional kernels may have an advantage in this context (see Jarrett et al. 2009; Yosinski et al. 2014).
