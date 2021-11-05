@@ -17,6 +17,12 @@ def create_train_and_test_sub_csvs(config: dict):
         training_labels.csv
         sample_submission.csv (optional)
 
+    The exported csvs have cols: id, target, and path
+    - id: id of each .npy (i.e. 00000e74ad)
+    - target: label for said .npy (0 or 1)
+    - path: path to said `.npy` file
+        - i.e. '/home/joseph/datasets/g2net_train/train/0/0/0/00000e74ad.npy'
+
     Args:
         config: yml config w/ data_dir and export_dir
     Returns:
