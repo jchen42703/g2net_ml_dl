@@ -23,13 +23,14 @@ def split_into_train_val_test(train_df: pd.DataFrame, seed: int = 420):
     return train_idx, valid_idx, test_idx
 
 
-def getKFolds(train_df: pd.DataFrame, seeds: List[str]) -> List[List[int]]:
+def getKFolds(train_df: pd.DataFrame,
+              seeds: List[str]) -> List[List[List[int]]]:
     """Generates len(seeds) folds for train_df
 
     Usage:
         # 5 folds
         folds = getKFolds(train_df, [42, 99, 420, 120, 222])
-        for fold, (train_idx, valid_idx) in enumerate(folds):
+        for fold, (train_idx, valid_idx, test_idx) in enumerate(folds):
             train_fold = train.iloc[train_idx]
             valid_fold = train.iloc[valid_idx]
             ...
@@ -40,5 +41,5 @@ def getKFolds(train_df: pd.DataFrame, seeds: List[str]) -> List[List[int]]:
     folds = []
     for seed in seeds:
         train, val, test = split_into_train_val_test(train_df, seed=seed)
-        folds.append([train, val, test])
+        folds.append([list(train), list(val), list(test)])
     return folds
