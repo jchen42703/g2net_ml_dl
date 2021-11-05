@@ -53,7 +53,7 @@ class G2NetDataset(torch.utils.data.Dataset):
         if self.mixup:
             signal, target = self.apply_mixup(signal, target)
 
-        return tuple(signal, target)
+        return (signal, target)
 
     def _get_signal_target(self, index: int):
         """Loads the signal as a numpy array, applies the transforms and returns
@@ -73,7 +73,7 @@ class G2NetDataset(torch.utils.data.Dataset):
             target = torch.tensor(self.targets[index]).unsqueeze(0).float()
         else:
             target = torch.tensor(0).unsqueeze(0).float()
-        return signal, target
+        return (signal, target)
 
     def apply_mixup(self, signal, target):
         """Applies the mixup transformation.
@@ -94,4 +94,4 @@ class G2NetDataset(torch.utils.data.Dataset):
             target = lam * target + (1 - lam) * target2
             if self.hard_label:
                 target = (target > self.hard_label).float()
-        return signal, target
+        return (signal, target)

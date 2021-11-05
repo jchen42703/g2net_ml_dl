@@ -1,6 +1,6 @@
 import pandas as pd
 from torch.utils.data import DataLoader
-from python.g2net.io.dataset import G2NetDataset
+from g2net.io.dataset import G2NetDataset
 from typing import Tuple, List
 from g2net.io.transforms import Compose, Normalize, BandPass, GaussianNoiseSNR
 
