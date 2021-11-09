@@ -1,4 +1,4 @@
-from g2net.utils.torch import get_gpu_memory, get_time
+from g2net_ml_dl.python.g2net.utils.torch import get_gpu_memory, get_time
 
 
 class TorchLogger:
