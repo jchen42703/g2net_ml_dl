@@ -16,15 +16,13 @@ def get_subset_df(paths: List[str], labels: pd.DataFrame) -> List[str]:
     return df
 
 
-def create_subset_df(train_dir: str, df_path: str):
+def create_subset_df(train_dir: Path, labels_df_path: str):
     """Creates a dataframe with only the ids of the files located in the
     train_dir.
-
-    Args:
-        train_dir: Directory to where all of the files are located
-        df_path: Path to the dataframe to subset (generally should be the
-            train.csv)
     """
-    labels = pd.read_csv(df_path)
+    labels = pd.read_csv(labels_df_path)
     all_paths = get_all_paths(train_dir=train_dir)
-    return get_subset_df(all_paths, labels)
+    labels = get_subset_df(all_paths, labels)
+    labels['path'] = labels['id'].apply(
+        lambda x: train_dir / f'train/{x[0]}/{x[1]}/{x[2]}/{x}.npy')
+    return labels
