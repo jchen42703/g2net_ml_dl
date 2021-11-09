@@ -54,3 +54,29 @@ def sota_dl_transforms() -> dict:
     )
 
     return transforms
+
+
+def create_base_transforms(maxes: List[float] = [4.61e-20, 4.23e-20, 1.11e-20],
+                           bandpass_range: List[int] = [16, 512]) -> dict:
+    """Creates a dictionary with keys train, test, and tta with the necessary
+    transforms for the config that we chose from the 2nd place sol.
+
+    The only transforms are normalization, a bandpass filter and gauss noise.
+    """
+    transforms = dict(
+        train=Compose([
+            Normalize(factors=maxes),
+            BandPass(lower=bandpass_range[0], upper=bandpass_range[1]),
+            GaussianNoiseSNR(min_snr=15, max_snr=30, p=0.5),
+        ]),
+        test=Compose([
+            Normalize(factors=maxes),
+            BandPass(lower=bandpass_range[0], upper=bandpass_range[1]),
+        ]),
+        tta=Compose([
+            Normalize(factors=maxes),
+            BandPass(lower=bandpass_range[0], upper=bandpass_range[1]),
+        ]),
+    )
+
+    return transforms
