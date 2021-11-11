@@ -24,5 +24,5 @@ def create_subset_df(train_dir: Path, labels_df_path: str):
     all_paths = get_all_paths(train_dir=train_dir)
     labels = get_subset_df(all_paths, labels)
     labels['path'] = labels['id'].apply(
-        lambda x: train_dir / f'train/{x[0]}/{x[1]}/{x[2]}/{x}.npy')
+        lambda x: train_dir / f'{x[0]}/{x[1]}/{x[2]}/{x}.npy')
     return labels
