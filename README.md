@@ -60,7 +60,7 @@ conda install pytorch=1.9.0=py3.7_cuda11.1_cudnn8.0.5_0
 
 Prep network with
 ```
-python prep_data.py
+python prep_data.py --cache
 ```
 
 Make sure that kuma_utils is up to date. In particular, the files:
@@ -75,7 +75,13 @@ HW_CFG = {
     'RTX3090': (16, 128, 1, 24), # CPU cores, RAM amount, GPU count, GPU RAM total
     'A100': (20, 100, 2, 40),
 }
-
+class Baseline:
+    name = 'baseline'
+    seed = 2021
+    train_path = INPUT_DIR/'train.csv'
+    test_path = INPUT_DIR/'test.csv'
+    train_cache = INPUT_DIR/'train_cache.pickle' # here
+    test_cache = INPUT_DIR
 ...
 parallel = 'df'
 ...
