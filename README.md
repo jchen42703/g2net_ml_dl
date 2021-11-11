@@ -69,15 +69,16 @@ kuma_utils/torch/modules/pooling.py
 kuma_utils/torch/trainer.py
 kuma_utils/torch/clip_grad.py
 ```
-You may need to change the batch size and hardware in config.py:
+You may need to change the batch size and hardware in configs.py:
 ```
 HW_CFG = {
     'RTX3090': (16, 128, 1, 24), # CPU cores, RAM amount, GPU count, GPU RAM total
-    'A100': (9, 60, 2, 40),
+    'A100': (20, 100, 2, 40),
 }
 
 ...
-
+parallel = 'df'
+...
 class Nspec23arch3(Nspec23):
     name = 'nspec_23_arch_3'
     model_params = Nspec23.model_params.copy()
@@ -85,7 +86,7 @@ class Nspec23arch3(Nspec23):
         base_filters=128,
         kernel_sizes=(64, 16, 4),
     )
-    batch_size = 16
+    batch_size = 32
     model_params['model_name'] = 'tf_efficientnet_b6_ns'
     transforms = Nspec22aug1.transforms.copy()
 
