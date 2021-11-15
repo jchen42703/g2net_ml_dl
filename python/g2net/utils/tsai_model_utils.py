@@ -1,6 +1,6 @@
 from fastai.torch_core import default_device, is_listy, apply_init
 from fastai.layers import LinBnDrop, flatten_model
-from fastai import Learner
+from fastai.basics import Learner
 from .tsai import print_verbose
 from functools import partial
 from torch.nn import Flatten, Reshape, Sequential, Linear

@@ -1,4 +1,6 @@
-from fastai import Learner, DataLoaders, ShowGraph, RocAucBinary
+from fastai.basics import Learner, DataLoaders
+from fastai.text.all import ShowGraphCallback
+from fastai.metrics import RocAucBinary
 from fastai.torch_core import default_device
 
 from pathlib import Path
@@ -25,7 +27,7 @@ def pipeline(X: np.array,
         model = build_ts_model(MiniRocketHead, dls=dls)
 
     # Drop into fastai and use it to find a good learning rate.
-    learn = Learner(dls, model, metrics=RocAucBinary, cbs=ShowGraph())
+    learn = Learner(dls, model, metrics=RocAucBinary, cbs=ShowGraphCallback())
     learn.lr_find()
 
     learn = Learner(dls, model, metrics=RocAucBinary, cbs=ShowGraph())
