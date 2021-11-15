@@ -3,7 +3,7 @@ from fastai.layers import LinBnDrop, flatten_model
 from fastai.basics import Learner
 from .tsai import print_verbose
 from functools import partial
-from torch.nn import Flatten, Reshape, Sequential, Linear
+from torch.nn import Flatten, Sequential, Linear, Module
 from pathlib import Path
 import torch
 
@@ -16,6 +16,18 @@ def ifnone(a, b):
     # From fastai.fastcore
     "`b` if `a` is None else `a`"
     return b if a is None else a
+
+
+class Reshape(Module):
+
+    def __init__(self, *shape):
+        self.shape = shape
+
+    def forward(self, x):
+        return x.reshape(x.shape[0], *self.shape)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({', '.join(['bs'] + [str(s) for s in self.shape])})"
 
 
 class create_lin_3d_head(Sequential):
