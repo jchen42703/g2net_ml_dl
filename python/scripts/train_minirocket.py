@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 import pandas as pd
 from sklearn.model_selection import StratifiedKFold
 from typing import List
+import pprint
 
 
 def train_one_fold(fold: int,
@@ -25,8 +26,13 @@ def train_one_fold(fold: int,
     }
 
     pipeline_params["model_params"]["random_state"] = seed
+    pipeline_params["logdir"] = os.path.join(pipeline_params["logdir"],
+                                             "logs_{fold}")
     model_path = f"minirocket_rocket_fold{fold}_seed{seed}_{timestamp}.pt"
     params = {**params, **pipeline_params, "save_path": model_path}
+    pp = pprint.PrettyPrinter(depth=4)
+    print("PIPELINE PARAMS: \n")
+    pp.pprint(params)
     pipeline = TrainPipeline(**params)
     pipeline.train_minirocket()
 
@@ -43,8 +49,10 @@ def prep_CV(train: pd.DataFrame,
     return fold_iter
 
 
-def create_fold_dl(train: pd.DataFrame, train_idx: List[int],
-                   valid_idx: List[int]):
+def create_fold_dl(train: pd.DataFrame,
+                   train_idx: List[int],
+                   valid_idx: List[int],
+                   batch_size: int = 64):
     """Creates the fold subset dfs and dataloaders.
     
     Args:
@@ -62,7 +70,7 @@ def create_fold_dl(train: pd.DataFrame, train_idx: List[int],
     train_loader, valid_loader = create_dataloaders(
         train_fold,
         valid_fold,
-        batch_size=cfg["pipeline_params"]["batch_size"],
+        batch_size=batch_size,
         train_transforms=transforms["train"],
         test_transforms=transforms["test"])
     return (train_loader, valid_loader)
@@ -70,6 +78,7 @@ def create_fold_dl(train: pd.DataFrame, train_idx: List[int],
 
 if __name__ == "__main__":
     import argparse
+    import os
     from g2net.utils.config_reader import load_config
     from g2net.utils.torch import seed_everything
 
@@ -85,17 +94,21 @@ if __name__ == "__main__":
     print("CONFIG: \n", cfg)
 
     # Cross validation
-    seed_everything(cfg.seed, deterministic=False)
-    train = pd.read_csv(cfg.train_path).iloc[:cfg.dset_size]
-    print(f"Creating {cfg.num_splits} folds with seed {cfg.seed}...")
-    fold_iter = prep_CV(train, cfg.seed, num_splits=cfg.num_splits)
+    seed = cfg["seed"]
+    num_splits = cfg["num_splits"]
+    seed_everything(cfg["seed"], deterministic=False)
+    train_path = os.path.join(cfg["dset_dir"], "train.csv")
+    train = pd.read_csv(train_path).iloc[:cfg["dset_size"]]
+    print(f"Creating {num_splits} folds with seed {seed}...")
+    fold_iter = prep_CV(train, seed, num_splits=num_splits)
 
     # Training for cfg.num_splits folds
     for fold, (train_idx, valid_idx) in enumerate(fold_iter):
-        train_loader, valid_loader = create_fold_dl(train, train_idx, valid_idx)
         print(f"======== TRAINING FOLD {fold} ========")
+        train_loader, valid_loader = create_fold_dl(
+            train, train_idx, valid_idx, batch_size=cfg["batch_size"])
         train_one_fold(fold,
-                       cfg.seed,
+                       seed,
                        train_loader=train_loader,
                        valid_loader=valid_loader,
                        pipeline_params=cfg["pipeline_params"])

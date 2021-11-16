@@ -1,10 +1,10 @@
-train_dir: "/home/jxc1598/final_project/data/train"
+dset_dir: "/home/jxc1598/final_project/data"
 seed: 2021
 dset_size: 30000
 num_splits: 5
+batch_size: 64
 pipeline_params:
   lr: 0.0002 # 2e-4
-  batch_size: 64
   num_epochs: 15
   model_params:
     c_in: 3
@@ -15,3 +15,4 @@ pipeline_params:
     T_0: 5
     T_mult: 1
     eta_min: 0.000001 # 1e-6 min LR
+  logdir: "./log"
