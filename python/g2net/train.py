@@ -147,6 +147,8 @@ def create_dataloaders(train_fold: pd.DataFrame,
                        batch_size: int = 64,
                        train_transforms: List = None,
                        test_transforms: List = None) -> Tuple[DataLoader]:
+    import multiprocessing
+    num_workers = multiprocessing.cpu_count()
     train_dset = G2NetDataset(paths=train_fold['path'].values,
                               targets=train_fold['target'].values,
                               transforms=train_transforms,
@@ -158,13 +160,13 @@ def create_dataloaders(train_fold: pd.DataFrame,
     train_loader = DataLoader(train_dset,
                               batch_size=batch_size,
                               shuffle=True,
-                              num_workers=0,
-                              pin_memory=False)
+                              num_workers=num_workers,
+                              pin_memory=True)
     valid_loader = DataLoader(valid_dset,
                               batch_size=batch_size,
                               shuffle=False,
-                              num_workers=0,
-                              pin_memory=False)
+                              num_workers=num_workers,
+                              pin_memory=True)
     return (train_loader, valid_loader)
 
 
