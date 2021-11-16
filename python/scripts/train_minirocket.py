@@ -26,12 +26,10 @@ def train_one_fold(fold: int,
     }
 
     pipeline_params["model_params"]["random_state"] = seed
-    pipeline_params["logdir"] = os.path.join(pipeline_params["logdir"],
-                                             "logs_{fold}")
     model_path = f"minirocket_rocket_fold{fold}_seed{seed}_{timestamp}.pt"
     params = {**params, **pipeline_params, "save_path": model_path}
     pp = pprint.PrettyPrinter(depth=4)
-    print("PIPELINE PARAMS: \n")
+    print("PIPELINE PARAMS:")
     pp.pprint(params)
     pipeline = TrainPipeline(**params)
     pipeline.train_minirocket()
@@ -103,10 +101,13 @@ if __name__ == "__main__":
     fold_iter = prep_CV(train, seed, num_splits=num_splits)
 
     # Training for cfg.num_splits folds
+    orig_logdir = cfg["pipeline_params"]["logdir"]
     for fold, (train_idx, valid_idx) in enumerate(fold_iter):
         print(f"======== TRAINING FOLD {fold} ========")
         train_loader, valid_loader = create_fold_dl(
             train, train_idx, valid_idx, batch_size=cfg["batch_size"])
+        cfg["pipeline_params"]["logdir"] = os.path.join(orig_logdir,
+                                                        f"logs_{fold}")
         train_one_fold(fold,
                        seed,
                        train_loader=train_loader,
