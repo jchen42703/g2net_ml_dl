@@ -118,7 +118,7 @@ class TrainPipeline(object):
             callbacks=[
                 CheckpointCallback(use_runner_logdir=True),
                 dl.EarlyStoppingCallback(patience=2,
-                                         metric="loss",
+                                         metric_key="loss",
                                          minimize=True),
                 dl.AUCCallback(input_key="logits",
                                target_key="targets",
