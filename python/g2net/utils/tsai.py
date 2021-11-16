@@ -70,46 +70,46 @@ class Timer:
             return total_elapsed
 
 
-def computer_setup():
-    import warnings
-    warnings.filterwarnings("ignore")
-    try:
-        import platform
-        print(f'os             : {platform.platform()}')
-    except:
-        pass
-    try:
-        from platform import python_version
-        print(f'python         : {python_version()}')
-    except:
-        pass
-    try:
-        import tsai
-        print(f'tsai           : {tsai.__version__}')
-    except:
-        print(f'tsai           : N/A')
-    try:
-        import fastai
-        print(f'fastai         : {fastai.__version__}')
-    except:
-        print(f'fastai         : N/A')
-    try:
-        import fastcore
-        print(f'fastcore       : {fastcore.__version__}')
-    except:
-        print(f'fastcore       : N/A')
+# def computer_setup():
+#     import warnings
+#     warnings.filterwarnings("ignore")
+#     try:
+#         import platform
+#         print(f'os             : {platform.platform()}')
+#     except:
+#         pass
+#     try:
+#         from platform import python_version
+#         print(f'python         : {python_version()}')
+#     except:
+#         pass
+#     try:
+#         import tsai
+#         print(f'tsai           : {tsai.__version__}')
+#     except:
+#         print(f'tsai           : N/A')
+#     try:
+#         import fastai
+#         print(f'fastai         : {fastai.__version__}')
+#     except:
+#         print(f'fastai         : N/A')
+#     try:
+#         import fastcore
+#         print(f'fastcore       : {fastcore.__version__}')
+#     except:
+#         print(f'fastcore       : N/A')
 
-    try:
-        import torch
-        print(f'torch          : {torch.__version__}')
-        try:
-            import torch_xla
-            print(f'device         : TPU')
-        except:
-            cpus = os.cpu_count()
-            iscuda = torch.cuda.is_available()
-            print(f'n_cpus         : {cpus}')
-            print(f'device         : {device} ({torch.cuda.get_device_name(0)})'
-                  if iscuda else f'device         : {device}')
-    except:
-        print(f'torch          : N/A')
+#     try:
+#         import torch
+#         print(f'torch          : {torch.__version__}')
+#         try:
+#             import torch_xla
+#             print(f'device         : TPU')
+#         except:
+#             cpus = os.cpu_count()
+#             iscuda = torch.cuda.is_available()
+#             print(f'n_cpus         : {cpus}')
+#             print(f'device         : {device} ({torch.cuda.get_device_name(0)})'
+#                   if iscuda else f'device         : {device}')
+#     except:
+#         print(f'torch          : N/A')
