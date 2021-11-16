@@ -5,7 +5,7 @@
 
 module swap intel gcc
 
-module load cuda/11.1 python/3.8.6
+module load cuda/11.2 python/3.8.6
 
 nvidia-smi
 
