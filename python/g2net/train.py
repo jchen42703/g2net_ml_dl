@@ -25,7 +25,7 @@ class TrainPipeline(object):
                  lr: float = 2e-4,
                  num_epochs: int = 15,
                  model_params: dict = None,
-                 schedulers_params: dict = None,
+                 scheduler_params: dict = None,
                  save_path: str = "model.pt") -> None:
         self.train_loader = train_loader
         self.valid_loader = valid_loader
@@ -33,10 +33,10 @@ class TrainPipeline(object):
         self.num_epochs = num_epochs
         self.model = None
         self.model_params = model_params
-        if schedulers_params == None:
+        if scheduler_params == None:
             self.scheduler_params = {"T_0": 5, "T_mult": 1, "eta_min": 1e-6}
         else:
-            self.schedulers_params = schedulers_params
+            self.scheduler_params = scheduler_params
 
         self.save_path = save_path
 
