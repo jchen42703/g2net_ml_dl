@@ -3,5 +3,5 @@
 # test/ (optional)
 # training_labels.csv
 # sample_submission.csv (optional)
-data_dir: "~/datasets/g2net_train/"
-export_dir: "~/datasets/g2net_train/"
+data_dir: "${HOME}/final_project/data"
+export_dir: "${HOME}/final_project/data"

@@ -1,5 +1,5 @@
 train_config:
-  dset_dir: "${PFSDIR}/input"
+  dset_dir: "${HOME}/final_project/data"
   seed: 2021
   dset_size: 30000
   num_splits: 5
