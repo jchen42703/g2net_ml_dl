@@ -14,33 +14,58 @@ from g2net.utils.tsai import Timer
 
 class TrainPipeline(object):
     """Basic pipeline for training the models.
+
+    It's generally you feed the params into this class with a dict and do:
+        TrainPipeline(**params_kwargs)
     """
 
-    def __init__(
-        self,
-        train_loader: DataLoader,
-        valid_loader: DataLoader,
-        lr: float = 1e-2,
-        num_epochs: int = 100,
-    ) -> None:
+    def __init__(self,
+                 train_loader: DataLoader,
+                 valid_loader: DataLoader,
+                 lr: float = 1e-2,
+                 num_epochs: int = 100,
+                 model_params: dict = None,
+                 schedulers_params: dict = None,
+                 save_path: str = "model.pt") -> None:
         self.train_loader = train_loader
         self.valid_loader = valid_loader
         self.lr = lr
         self.num_epochs = num_epochs
+        self.model = None
+        self.model_params = model_params
+        if schedulers_params == None:
+            self.scheduler_params = {"T_0": 5, "T_mult": 1, "eta_min": 1e-6}
+        else:
+            self.schedulers_params = schedulers_params
 
-    def save_model(self, model: torch.nn.Module, path: str):
-        torch.save(model.state_dict(), path)
+        self.save_path = save_path
+
+    def save_model(self, path: str):
+        torch.save(self.model.state_dict(), path)
 
     def train_minirocket(self):
+        """Simple pipeline with minimal configuration.
+        """
         # Online mode; head is learned
-        model = MiniRocket(3, 1, 4096, num_features=50000, random_state=420)
+        if self.model_params == None:
+            self.model_params = {
+                "c_in": 3,
+                "c_out": 1,
+                "seq_len": 4096,
+                "num_features": 10000,
+                "random_state": 2021
+            }
+
+        self.model = MiniRocket(**self.model_params)
         criterion = nn.BCEWithLogitsLoss()
-        optimizer = optim.Adam(model.parameters(), lr=self.lr)
+        optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
 
         loaders = {
             "train": self.train_loader,
             "valid": self.valid_loader,
         }
+        scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
+            **self.scheduler_params)
 
         runner = dl.SupervisedRunner(input_key="features",
                                      output_key="logits",
@@ -50,14 +75,20 @@ class TrainPipeline(object):
         timer.start()
         # model training
         runner.train(
-            model=model,
+            model=self.model,
             criterion=criterion,
             optimizer=optimizer,
+            scheduler=scheduler,
             loaders=loaders,
             num_epochs=self.num_epochs,
             callbacks=[
-                dl.AccuracyCallback(input_key="logits", target_key="targets"),
-                dl.AUCCallback(input_key="logits", target_key="targets"),
+                dl.CheckpointCallback(),
+                dl.EarlyStoppingCallback(patience=2,
+                                         metric="loss",
+                                         minimize=True),
+                dl.AUCCallback(input_key="logits",
+                               target_key="targets",
+                               activation="Sigmoid"),
             ],
             logdir="./logs",
             valid_loader="valid",
@@ -67,11 +98,9 @@ class TrainPipeline(object):
             load_best_on_end=True,
         )
         timer.stop()
-        timestamp = datetime.now().timestamp()
-        model_name = f'minirocket_{timestamp}.pt'
-        print(f"Saving {model_name}...")
-        self.save_model(model_name)
-        return model
+        print(f"Saving {self.save_path}...")
+        self.save_model(self.save_path)
+        return self.model
 
 
 def create_dataloaders(train_fold: pd.DataFrame,
