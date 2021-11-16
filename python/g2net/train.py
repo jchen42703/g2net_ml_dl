@@ -43,12 +43,33 @@ class TrainPipeline(object):
     def save_model(self, path: str):
         torch.save(self.model.state_dict(), path)
 
-    def get_model_info(self, input_shape: Tuple[str] = (3, 4096)):
+    def get_model_info(self,
+                       input_shape: Tuple[str] = (3, 4096),
+                       cuda: bool = True):
         if self.model == None:
             print("No model found")
         else:
             from torchsummary import summary
+            if cuda:
+                self.model = self.model.to("cuda")
             summary(self.model, input_shape)
+
+    def create_baseline(self):
+        from g2net.models.base.architectures import SpectroCNN
+        from g2net.models.base.wavegram import CNNSpectrogram
+
+        spec_params = dict(
+            base_filters=128,
+            kernel_sizes=(64, 16, 4),
+        )
+
+        model_params = dict(model_name="tf_efficientnet_b6_ns",
+                            pretrained=True,
+                            spectrogram=CNNSpectrogram,
+                            spec_params=spec_params,
+                            custom_classifier="gem",
+                            upsample="bicubic")
+        self.model = SpectroCNN(**model_params)
 
     def create_minirocket(self):
         # Online mode; head is learned
