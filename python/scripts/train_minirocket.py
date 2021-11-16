@@ -1,49 +1,66 @@
-from fastai.basics import Learner, DataLoaders
-from fastai.text.all import ShowGraphCallback
-from fastai.metrics import RocAucBinary
-from fastai.torch_core import default_device
-
-from pathlib import Path
-import numpy as np
-from g2net.models.filter import MiniRocketFeatures, MiniRocketHead, \
-                                MiniRocket, get_minirocket_features
+import datetime
+from catalyst import dl
+from g2net.models.filter import MiniRocket
 from g2net.utils.tsai import Timer
-from g2net.utils import build_ts_model
+from torch import nn, optim
 import torch
 
 
-def pipeline(X: np.array,
-             train_loader: torch.data.DataLoader,
-             valid_loader: torch.data.DataLoader,
-             learn_feats_batchwise: bool = False):
-    dls = DataLoaders(train_loader, valid_loader)
-    dls.vars = 3  # channels in, 3 signals
-    dls.c = 1  # channels out (1 binary classification)
-    dls.len = 4096  # length of a single signal
+class TrainPipeline(object):
+    """Basic pipeline for training the models.
+    """
 
-    if learn_feats_batchwise:
+    def __init__(
+        self,
+        train_loader: torch.data.DataLoader,
+        valid_loader: torch.data.DataLoader,
+        lr: float = 1e-2,
+        num_epoch: int = 100,
+    ) -> None:
+        self.train_loader = train_loader
+        self.valid_loader = valid_loader
+        self.lr = lr
+        self.num_epoch = num_epoch
+
+    def save_model(self, model: torch.nn.Module, path: str):
+        torch.save(model.state_dict(), path)
+
+    def train_minirocket(self):
         # Online mode; head is learned
-        model = build_ts_model(MiniRocket, dls=dls)
-    else:
-        # Offline mode
-        # Fit minirocket features on a batch
-        mrf = MiniRocketFeatures(X.shape[1], X.shape[2]).to(default_device())
-        mrf.fit(X)
-        X_feat = get_minirocket_features(X, mrf, chunksize=1024, to_np=True)
-        # model is a linear classifier Head
-        model = build_ts_model(MiniRocketHead, dls=dls)
+        model = MiniRocket(3, 1, 4096, num_features=50000, random_state=420)
+        criterion = nn.BCEWithLogitsLoss()
+        optimizer = optim.Adam(model.parameters(), lr=self.lr)
 
-    # Drop into fastai and use it to find a good learning rate.
-    learn = Learner(dls, model, metrics=RocAucBinary, cbs=ShowGraphCallback())
-    learn.lr_find()
+        loaders = {
+            "train": self.train_loader,
+            "valid": self.valid_loader,
+        }
 
-    learn = Learner(dls, model, metrics=RocAucBinary, cbs=ShowGraphCallback())
-    timer = Timer()
-    timer.start()
-    learn.fit_one_cycle(10, 3e-4)
-    timer.stop()
-
-    PATH = Path('./models/MiniRocket_aug.pkl')
-
-    PATH.parent.mkdir(parents=True, exist_ok=True)
-    learn.export(PATH)
+        runner = dl.SupervisedRunner(input_key="features",
+                                     output_key="logits",
+                                     target_key="targets",
+                                     loss_key="loss")
+        timer = Timer()
+        timer.start()
+        # model training
+        runner.train(
+            model=model,
+            criterion=criterion,
+            optimizer=optimizer,
+            loaders=loaders,
+            num_epochs=self.num_epoch,
+            callbacks=[
+                dl.AccuracyCallback(input_key="logits", target_key="targets"),
+                dl.AUCCallback(input_key="logits", target_key="targets"),
+            ],
+            logdir="./logs",
+            valid_loader="valid",
+            valid_metric="loss",
+            minimize_valid_metric=True,
+            verbose=True,
+            load_best_on_end=True,
+        )
+        timer.stop()
+        timestamp = datetime.datetime.now().timestamp()
+        self.save_model(f'minirocket_{timestamp}.pt')
+        return model
