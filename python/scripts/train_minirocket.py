@@ -87,7 +87,7 @@ if __name__ == "__main__":
                         help="Path to the .yml config.")
     args = parser.parse_args()
 
-    cfg = load_config(args.yml_path)
+    cfg = load_config(args.yml_path)["train_config"]
 
     print("CONFIG: \n", cfg)
 

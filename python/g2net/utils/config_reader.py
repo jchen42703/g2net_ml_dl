@@ -1,16 +1,8 @@
-import yaml
+from envyaml import EnvYAML
 
 
-def load_config(yml_path):
-    """Loads a .yml file.
-    Args:
-        yml_path (str): Path to a .yaml or .yml file.
-    Returns:
-        config (dict): parsed .yml config
+def load_config(yml_path) -> dict:
+    """Loads a .yml file with environment variables evaluated.
     """
-    with open(yml_path, 'r') as stream:
-        try:
-            config = yaml.safe_load(stream)
-        except yaml.YAMLError as exc:
-            print(exc)
-    return config
+    env = EnvYAML(yml_path)
+    return env.export()
