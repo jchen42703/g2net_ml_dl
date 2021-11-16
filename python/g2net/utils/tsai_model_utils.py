@@ -1,7 +1,7 @@
-from fastai.torch_core import default_device, is_listy, apply_init
+from fastai.torch_core import default_device, apply_init
 from fastai.layers import LinBnDrop, flatten_model
 from fastai.basics import Learner
-from .tsai import print_verbose
+from g2net.utils.tsai import print_verbose
 from functools import partial
 from torch.nn import Flatten, Sequential, Linear, Module
 from pathlib import Path
@@ -131,12 +131,7 @@ def build_ts_model(arch,
         c_in = ifnone(c_in, dls.vars)
         c_out = ifnone(c_out, dls.c)
         seq_len = ifnone(seq_len, dls.len)
-        d = ifnone(d, dls.d)
-    if is_listy(d) and len(d) == 2:
-        if 'custom_head' not in kwargs.keys():
-            kwargs['custom_head'] = partial(create_lin_3d_head, d=d)
-        else:
-            kwargs['custom_head'] = partial(kwargs['custom_head'], d=d)
+
     if sum([
             1 for v in [
                 'RNN_FCN', 'LSTM_FCN', 'RNNPlus', 'LSTMPlus', 'GRUPlus',
@@ -149,12 +144,6 @@ def build_ts_model(arch,
             verbose)
         model = arch(c_in, c_out, seq_len=seq_len, **arch_config,
                      **kwargs).to(device=device)
-    elif 'xresnet' in arch.__name__ and not '1d' in arch.__name__:
-        print_verbose(
-            f'arch: {arch.__name__}(c_in={c_in} c_out={c_out} device={device}, arch_config={arch_config}, kwargs={kwargs})',
-            verbose)
-        model = (arch(c_in=c_in, n_out=c_out, **arch_config,
-                      **kwargs)).to(device=device)
     elif 'minirockethead' in arch.__name__.lower():
         print_verbose(
             f'arch: {arch.__name__}(c_in={c_in} seq_len={seq_len} device={device}, arch_config={arch_config}, kwargs={kwargs})',

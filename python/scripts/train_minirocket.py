@@ -9,11 +9,18 @@ from g2net.models.filter import MiniRocketFeatures, MiniRocketHead, \
                                 MiniRocket, get_minirocket_features
 from g2net.utils.tsai import Timer
 from g2net.utils import build_ts_model
+import torch
 
 
 def pipeline(X: np.array,
-             dls: DataLoaders,
+             train_loader: torch.data.DataLoader,
+             valid_loader: torch.data.DataLoader,
              learn_feats_batchwise: bool = False):
+    dls = DataLoaders(train_loader, valid_loader)
+    dls.vars = 3  # channels in, 3 signals
+    dls.c = 1  # channels out (1 binary classification)
+    dls.len = 4096  # length of a single signal
+
     if learn_feats_batchwise:
         # Online mode; head is learned
         model = build_ts_model(MiniRocket, dls=dls)
@@ -30,7 +37,7 @@ def pipeline(X: np.array,
     learn = Learner(dls, model, metrics=RocAucBinary, cbs=ShowGraphCallback())
     learn.lr_find()
 
-    learn = Learner(dls, model, metrics=RocAucBinary, cbs=ShowGraph())
+    learn = Learner(dls, model, metrics=RocAucBinary, cbs=ShowGraphCallback())
     timer = Timer()
     timer.start()
     learn.fit_one_cycle(10, 3e-4)
