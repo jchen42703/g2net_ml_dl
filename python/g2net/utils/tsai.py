@@ -1,7 +1,7 @@
 import torch
 import time
 import warnings
-import datetime
+from datetime import datetime
 import os
 
 warnings.simplefilter(action='ignore', category=FutureWarning)

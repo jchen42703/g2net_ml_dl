@@ -3,7 +3,7 @@ from torch import nn, optim
 import torch
 from torch.utils.data import DataLoader
 from typing import Tuple, List
-import datetime
+from datetime import datetime
 from catalyst import dl
 
 from g2net.io.dataset import G2NetDataset
@@ -21,12 +21,12 @@ class TrainPipeline(object):
         train_loader: DataLoader,
         valid_loader: DataLoader,
         lr: float = 1e-2,
-        num_epoch: int = 100,
+        num_epochs: int = 100,
     ) -> None:
         self.train_loader = train_loader
         self.valid_loader = valid_loader
         self.lr = lr
-        self.num_epoch = num_epoch
+        self.num_epochs = num_epochs
 
     def save_model(self, model: torch.nn.Module, path: str):
         torch.save(model.state_dict(), path)
@@ -54,7 +54,7 @@ class TrainPipeline(object):
             criterion=criterion,
             optimizer=optimizer,
             loaders=loaders,
-            num_epochs=self.num_epoch,
+            num_epochs=self.num_epochs,
             callbacks=[
                 dl.AccuracyCallback(input_key="logits", target_key="targets"),
                 dl.AUCCallback(input_key="logits", target_key="targets"),
@@ -67,8 +67,10 @@ class TrainPipeline(object):
             load_best_on_end=True,
         )
         timer.stop()
-        timestamp = datetime.datetime.now().timestamp()
-        self.save_model(f'minirocket_{timestamp}.pt')
+        timestamp = datetime.now().timestamp()
+        model_name = f'minirocket_{timestamp}.pt'
+        print(f"Saving {model_name}...")
+        self.save_model(model_name)
         return model
 
 
