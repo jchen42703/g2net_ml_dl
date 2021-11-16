@@ -26,6 +26,7 @@ class TrainPipeline(object):
                  num_epochs: int = 15,
                  model_params: dict = None,
                  scheduler_params: dict = None,
+                 logdir: str = "./logs",
                  save_path: str = "model.pt") -> None:
         self.train_loader = train_loader
         self.valid_loader = valid_loader
@@ -38,6 +39,7 @@ class TrainPipeline(object):
         else:
             self.scheduler_params = scheduler_params
 
+        self.logdir = logdir
         self.save_path = save_path
 
     def save_model(self, path: str):
@@ -127,7 +129,7 @@ class TrainPipeline(object):
                                           output_key="scores"),
                 dl.AUCCallback(input_key="scores", target_key="targets"),
             ],
-            logdir="./logs",
+            logdir=self.logdir,
             valid_loader="valid",
             valid_metric="loss",
             minimize_valid_metric=True,
