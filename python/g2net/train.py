@@ -3,8 +3,8 @@ from torch import nn, optim
 import torch
 from torch.utils.data import DataLoader
 from typing import Tuple, List
-from datetime import datetime
 from catalyst import dl
+from catalyst.callbacks.checkpoint import CheckpointCallback
 
 from g2net.io.dataset import G2NetDataset
 from g2net.io.transforms import Compose, Normalize, BandPass, GaussianNoiseSNR
@@ -116,7 +116,7 @@ class TrainPipeline(object):
             loaders=loaders,
             num_epochs=self.num_epochs,
             callbacks=[
-                dl.CheckpointCallback(),
+                CheckpointCallback(use_runner_logdir=True),
                 dl.EarlyStoppingCallback(patience=2,
                                          metric="loss",
                                          minimize=True),
