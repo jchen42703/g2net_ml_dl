@@ -99,7 +99,7 @@ class TrainPipeline(object):
             "valid": self.valid_loader,
         }
         scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
-            **self.scheduler_params)
+            optimizer=optimizer, **self.scheduler_params)
 
         runner = dl.SupervisedRunner(input_key="features",
                                      output_key="logits",
