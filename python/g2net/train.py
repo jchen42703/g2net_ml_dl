@@ -22,8 +22,8 @@ class TrainPipeline(object):
     def __init__(self,
                  train_loader: DataLoader,
                  valid_loader: DataLoader,
-                 lr: float = 1e-2,
-                 num_epochs: int = 100,
+                 lr: float = 2e-4,
+                 num_epochs: int = 15,
                  model_params: dict = None,
                  schedulers_params: dict = None,
                  save_path: str = "model.pt") -> None:
@@ -43,10 +43,16 @@ class TrainPipeline(object):
     def save_model(self, path: str):
         torch.save(self.model.state_dict(), path)
 
-    def train_minirocket(self):
-        """Simple pipeline with minimal configuration.
-        """
+    def get_model_info(self, input_shape: Tuple[str] = (3, 4096)):
+        if self.model == None:
+            print("No model found")
+        else:
+            from torchsummary import summary
+            summary(self.model, input_shape)
+
+    def create_minirocket(self):
         # Online mode; head is learned
+        print("Creating minirocket model...")
         if self.model_params == None:
             self.model_params = {
                 "c_in": 3,
@@ -57,6 +63,13 @@ class TrainPipeline(object):
             }
 
         self.model = MiniRocket(**self.model_params)
+
+    def train_minirocket(self):
+        """Simple pipeline with minimal configuration.
+        """
+        self.create_minirocket()
+        self.get_model_info(input_shape=(3, 4096))
+
         criterion = nn.BCEWithLogitsLoss()
         optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
 
