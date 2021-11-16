@@ -1,10 +1,13 @@
 #!/bin/bash
-#SBATCH -o test.o%j
+#SBATCH -p class --gres=gpu:1 -A sxg125_csds438
+#SBATCH -c 8
+#SBATCH --mem=25gb
 
 module swap intel gcc
 
 module load cuda/11.1 python/3.8.6
-module load miniconda3/4.9.2
+
+nvidia-smi
 
 export PYTHONUSERBASE=$HOME/.usr/local/python/3.8.6
 
@@ -12,8 +15,6 @@ echo $PFSDIR
 
 cd $PFSDIR
 
-# cp -r $HOME/final_project/data/* $PFSDIR/input/
-#rm -rf g2net_ml_dl
 git clone https://github.com/jchen42703/g2net_ml_dl.git
 
 cd g2net_ml_dl/python
