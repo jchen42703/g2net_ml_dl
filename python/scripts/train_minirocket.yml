@@ -4,6 +4,7 @@ train_config:
   dset_size: 30000
   num_splits: 5
   batch_size: 128
+  num_workers: 8
   pipeline_params:
     # lr: 0.0002 # 2e-4
     lr: 0.001 # 1e-3

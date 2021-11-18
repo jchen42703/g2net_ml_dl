@@ -50,7 +50,8 @@ def prep_CV(train: pd.DataFrame,
 def create_fold_dl(train: pd.DataFrame,
                    train_idx: List[int],
                    valid_idx: List[int],
-                   batch_size: int = 64):
+                   batch_size: int = 64,
+                   num_workers: int = 8):
     """Creates the fold subset dfs and dataloaders.
     
     Args:
@@ -70,7 +71,8 @@ def create_fold_dl(train: pd.DataFrame,
         valid_fold,
         batch_size=batch_size,
         train_transforms=transforms["train"],
-        test_transforms=transforms["test"])
+        test_transforms=transforms["test"],
+        num_workers=num_workers)
     return (train_loader, valid_loader)
 
 
@@ -104,8 +106,13 @@ if __name__ == "__main__":
     orig_logdir = cfg["pipeline_params"]["logdir"]
     for fold, (train_idx, valid_idx) in enumerate(fold_iter):
         print(f"======== TRAINING FOLD {fold} ========")
+        # idk why it reformatted to look like this LOL
         train_loader, valid_loader = create_fold_dl(
-            train, train_idx, valid_idx, batch_size=cfg["batch_size"])
+            train,
+            train_idx,
+            valid_idx,
+            batch_size=cfg["batch_size"],
+            num_workers=cfg["num_workers"])
         cfg["pipeline_params"]["logdir"] = os.path.join(orig_logdir,
                                                         f"logs_{fold}")
         train_one_fold(fold,
