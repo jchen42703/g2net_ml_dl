@@ -1,0 +1,21 @@
+infer_config:
+  dset_dir: "${HOME}/final_project/data"
+  export_dir: "${HOME}/final_project/data"
+  threshold: 0.5
+  # df.iloc[idx_start:idx_end]
+  idx_start: 30000
+  idx_end: 37168
+  batch_size: 512
+  num_workers: 8
+  base_model_paths:
+    - "${HOME}/final_project/base_model_paths/fold0.pt"
+    - "${HOME}/final_project/base_model_paths/fold1.pt"
+    - "${HOME}/final_project/base_model_paths/fold2.pt"
+    - "${HOME}/final_project/base_model_paths/fold3.pt"
+    - "${HOME}/final_project/base_model_paths/fold4.pt"
+  filter_model_paths:
+    - "${HOME}/final_project/filter_model_paths/logs_0/best.pth"
+    - "${HOME}/final_project/filter_model_paths/logs_1/best.pth"
+    - "${HOME}/final_project/filter_model_paths/logs_2/best.pth"
+    - "${HOME}/final_project/filter_model_paths/logs_3/best.pth"
+    - "${HOME}/final_project/filter_model_paths/logs_4/best.pth"
