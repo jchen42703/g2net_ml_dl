@@ -36,7 +36,8 @@ class Inferer(object):
                  test_loader,
                  base_model_paths: List[str],
                  filter_model_paths: List[str],
-                 threshold: float = 0.5):
+                 threshold: float = 0.5,
+                 cpu_only: bool = False):
         """
         Args:
             test_loader: See create_test_dataloader
@@ -52,6 +53,7 @@ class Inferer(object):
         self.filter_model = None
         self.threshold = threshold
         self.num_folds = len(self.filter_model_paths)
+        self.cpu_only = cpu_only
 
         if len(self.filter_model_paths) != len(self.base_model_paths):
             raise ValueError(
@@ -93,7 +95,9 @@ class Inferer(object):
         """
         # loads model and weights
         self.filter_model = MiniRocket()
-        load_weights(self.filter_model, self.filter_model_paths[fold])
+        load_weights(self.filter_model,
+                     self.filter_model_paths[fold],
+                     cpu_only=self.cpu_only)
         self.filter_model.eval()
 
         return self.infer_single(self.filter_model, "mr")
@@ -103,7 +107,9 @@ class Inferer(object):
         """
         # loads model and weights
         self.base_model = create_base_model()
-        load_weights(self.base_model, self.base_model_paths[fold])
+        load_weights(self.base_model,
+                     self.base_model_paths[fold],
+                     cpu_only=self.cpu_only)
         self.base_model.eval()
 
         # Do inference
@@ -190,7 +196,9 @@ def infer_auc(y_true: torch.Tensor, y_pred: torch.Tensor) -> float:
     return roc_auc_score(y, pred)
 
 
-def load_weights(model: torch.nn.Module, weights_path: str):
+def load_weights(model: torch.nn.Module,
+                 weights_path: str,
+                 cpu_only: bool = False):
     """Loads weights into model from weights_path.
 
     The state dict from the baseline has the keys:
@@ -207,7 +215,11 @@ def load_weights(model: torch.nn.Module, weights_path: str):
 
     To load the model weights, only use state_dict["model_state_dict"]
     """
-    state_dict = torch.load(weights_path)
+    if cpu_only:
+        state_dict = torch.load(weights_path, map_location=torch.device('cpu'))
+    else:
+        state_dict = torch.load(weights_path)
+
     # base model
     if "model" in state_dict.keys():
         key = "model"
