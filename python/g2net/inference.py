@@ -162,7 +162,7 @@ class Inferer(object):
     def infer_all(self):
         """Inference on all folds
         """
-        for fold in self.num_folds:
+        for fold in range(self.num_folds):
             metrics = self.infer_single_fold(fold)
             self.metrics.append({"fold": fold, **metrics})
         # TO DO: compute averages and std dev and append the row
