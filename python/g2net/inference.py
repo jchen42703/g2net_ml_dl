@@ -13,7 +13,7 @@ from g2net.train import create_base_transforms
 from g2net.utils.tsai import Timer
 
 
-class Inferer(object):
+class Inferrer(object):
     """Runs and collects stats for the inference. Single GPU inference.
 
     The associated test set should be on df.iloc[dset_size:] (not covered by the
@@ -37,6 +37,7 @@ class Inferer(object):
                  base_model_paths: List[str],
                  filter_model_paths: List[str],
                  threshold: float = 0.5,
+                 filter_model_params: dict = None,
                  cpu_only: bool = False):
         """
         Args:
@@ -53,6 +54,7 @@ class Inferer(object):
         self.filter_model = None
         self.threshold = threshold
         self.num_folds = len(self.filter_model_paths)
+        self.filter_model_params = filter_model_params
         self.cpu_only = cpu_only
 
         if len(self.filter_model_paths) != len(self.base_model_paths):
@@ -76,7 +78,7 @@ class Inferer(object):
         all_auc = []
         # Single GPU inference
         for batch in self.test_loader:
-            pred = model(batch[0])
+            pred = predict_binary(model, batch[0])
             # thresholding
             pred[pred >= self.threshold] = 1
             pred[pred < self.threshold] = 0
@@ -94,7 +96,19 @@ class Inferer(object):
         """Infers minirocket only. Returns a dictionary of metrics
         """
         # loads model and weights
-        self.filter_model = MiniRocket()
+        # Online mode; head is learned
+        # print("Creating minirocket model...")
+        if self.filter_model_params == None:
+            print("Loading default minirocket params...")
+            self.filter_model_params = {
+                "c_in": 3,
+                "c_out": 1,
+                "seq_len": 4096,
+                "num_features": 10000,
+                "random_state": 2021
+            }
+
+        self.filter_model = MiniRocket(**self.filter_model_params)
         load_weights(self.filter_model,
                      self.filter_model_paths[fold],
                      cpu_only=self.cpu_only)
@@ -124,14 +138,21 @@ class Inferer(object):
         self.timer.start(verbose=False)
         all_auc = []
 
+        def use_pos_batches(x: torch.Tensor, batches_mask: torch.Tensor):
+            pos_idx = [
+                batch_idx for batch_idx, boolean in enumerate(batches_mask)
+                if boolean
+            ]
+            return x[pos_idx]
+
         # Single GPU inference
         for batch in self.test_loader:
-            pred = filter_model(batch[0])
+            pred = predict_binary(filter_model, batch[0])
             # indices of the batch that the model thought were GWs
             pos_idx = pred >= self.threshold
-            if len(pos_idx) > 0:
-                pred[pos_idx] = base_model(batch[0][pos_idx])
-
+            if pos_idx.any():
+                pos_batch = use_pos_batches(batch[0], pos_idx)
+                pred[pos_idx] = predict_binary(base_model, pos_batch)
             # thresholding with the new predictions (if any)
             pred[pred >= self.threshold] = 1
             pred[pred < self.threshold] = 0
@@ -154,7 +175,7 @@ class Inferer(object):
         # Load models and weights
         mr_only_metrics = self.infer_minirocket_only(fold)
         base_only_metrics = self.infer_base_only(fold)
-        both_metrics = self.infer_all_both(self.filter_model, self.base_model)
+        both_metrics = self.infer_both(self.filter_model, self.base_model)
         fold_metrics = {**mr_only_metrics, **base_only_metrics, **both_metrics}
         return fold_metrics
 
@@ -162,6 +183,7 @@ class Inferer(object):
         """Inference on all folds
         """
         for fold in range(self.num_folds):
+            print(f"Running inference for fold {fold}")
             metrics = self.infer_single_fold(fold)
             fold_metrics = {"fold": fold, **metrics}
             self.metrics = self.metrics.append(fold_metrics, ignore_index=True)
@@ -179,9 +201,9 @@ class Inferer(object):
         stddev = {}
         for metric in self.cols:
             if metric == "fold":
-                avg["fold"] = "stddev"
+                stddev["fold"] = "stddev"
             else:
-                avg[metric] = self.metrics[metric].std()
+                stddev[metric] = self.metrics[metric].std()
 
         self.metrics = self.metrics.append(avg, ignore_index=True)
         self.metrics = self.metrics.append(stddev, ignore_index=True)
@@ -191,9 +213,21 @@ class Inferer(object):
 def infer_auc(y_true: torch.Tensor, y_pred: torch.Tensor) -> float:
     """Wraps sklearn.metrics.roc_auc_score to work with torch tensors.
     """
-    y = y_true.cpu().numpy().flatten()
-    pred = y_pred.cpu().numpy().flatten()
+    y = y_true.detach().cpu().numpy().flatten()
+    pred = y_pred.detach().cpu().numpy().flatten()
     return roc_auc_score(y, pred)
+
+
+def predict_binary(model, x: torch.Tensor) -> torch.Tensor:
+    """Assumes that the model returns logits. The output activation function is
+    sigmoid.
+
+    Args:
+        model: The model to predict with
+        x: the input batch
+    """
+    sigmoid = torch.nn.Sigmoid()
+    return sigmoid(model(x))
 
 
 def load_weights(model: torch.nn.Module,
