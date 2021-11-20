@@ -7,6 +7,7 @@ infer_config:
   idx_end: 37168
   batch_size: 512
   num_workers: 8
+  cpu_only: False
   base_model_paths:
     - "${HOME}/final_project/base_model_paths/fold0.pt"
     - "${HOME}/final_project/base_model_paths/fold1.pt"

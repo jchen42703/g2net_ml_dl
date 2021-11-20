@@ -4,6 +4,7 @@ if __name__ == "__main__":
     import pandas as pd
     from g2net.utils.config_reader import load_config
     from g2net.inference import Inferrer, create_test_transforms, create_test_dataloader
+    import pprint
 
     parser = argparse.ArgumentParser(description="For training.")
     parser.add_argument("--yml_path",
@@ -13,7 +14,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     cfg = load_config(args.yml_path)["infer_config"]
-    print("CONFIG: \n", cfg)
+    pp = pprint.PrettyPrinter(depth=4)
+    print("CONFIG: \n")
+    pp.pprint(cfg)
 
     # Creates the subset of the train.csv to load data for testing
     # Works since we only used a subset of the actual training set for
@@ -28,7 +31,8 @@ if __name__ == "__main__":
     inferrer = Inferrer(test_loader,
                         cfg["base_model_paths"],
                         cfg["filter_model_paths"],
-                        threshold=cfg["threshold"])
+                        threshold=cfg["threshold"],
+                        cpu_only=cfg["cpu_only"])
     inferrer.infer_all()
     csv_path = os.path.join(cfg["export_dir"], "inference_metrics.csv")
     inferrer.metrics.to_csv(csv_path)
