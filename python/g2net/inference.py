@@ -36,15 +36,13 @@ class Inferer(object):
                  test_loader,
                  base_model_paths: List[str],
                  filter_model_paths: List[str],
-                 threshold: float = 0.5,
-                 num_folds: int = 5):
+                 threshold: float = 0.5):
         """
         Args:
             test_loader: See create_test_dataloader
             base_model_paths: paths to base models in order of folds
             filter_model_paths: paths to filter models in order of folds
             threshold: the cutoff for sigmoid predicted outputs for 0 and 1.
-            num_folds: Should be = len(base_model_paths)
         """
         self.test_loader = test_loader
         self.base_model_paths = base_model_paths
@@ -53,25 +51,20 @@ class Inferer(object):
         self.base_model = None
         self.filter_model = None
         self.threshold = threshold
-        self.num_folds = num_folds
+        self.num_folds = len(self.filter_model_paths)
 
-        if self.num_folds != len(self.base_model_paths):
+        if len(self.filter_model_paths) != len(self.base_model_paths):
             raise ValueError(
-                "the number of folds should be the same as the number of base model weights"
+                "the number of filter models should be the same as the number of base model weights"
             )
 
-        if self.num_folds != len(self.filter_model_paths):
-            raise ValueError(
-                "the number of folds should be the same as the number of base model weights"
-            )
-
-        cols = [
+        self.cols = [
             "fold", "base_auc", "base_time", "mr_auc", "mr_time", "both_auc",
             "both_time"
         ]
-        print("Tracking ", cols)
+        print("Tracking ", self.cols)
         # To get averages, do self.metrics.mean()
-        self.metrics = pd.DataFrame(columns=cols)
+        self.metrics = pd.DataFrame(columns=self.cols)
 
     def infer_single(self, model, metric_key):
         if model == None:
@@ -164,8 +157,29 @@ class Inferer(object):
         """
         for fold in range(self.num_folds):
             metrics = self.infer_single_fold(fold)
-            self.metrics.append({"fold": fold, **metrics})
-        # TO DO: compute averages and std dev and append the row
+            fold_metrics = {"fold": fold, **metrics}
+            self.metrics = self.metrics.append(fold_metrics, ignore_index=True)
+
+        avg = {}
+        for metric in self.cols:
+            if metric == "fold":
+                avg["fold"] = "mean"
+            else:
+                # metric_avg = self.metrics[metric].mean()
+                # metric_std = self.metrics[metric].std()
+                # avg[metric] = f"{metric_avg} +/- {metric_std}"
+                avg[metric] = self.metrics[metric].mean()
+
+        stddev = {}
+        for metric in self.cols:
+            if metric == "fold":
+                avg["fold"] = "stddev"
+            else:
+                avg[metric] = self.metrics[metric].std()
+
+        self.metrics = self.metrics.append(avg, ignore_index=True)
+        self.metrics = self.metrics.append(stddev, ignore_index=True)
+        print("Results: \n", self.metrics)
 
 
 def infer_auc(y_true: torch.Tensor, y_pred: torch.Tensor) -> float:
@@ -182,8 +196,26 @@ def load_weights(model: torch.nn.Module, weights_path: str):
     The state dict from the baseline has the keys:
         "global_epoch", "model", "state", "all_states"
     To load the model weights, only use state_dict["model"].
+
+    The minirocket version has keys:
+        dict_keys(['run_key', 'global_epoch_step', 'global_batch_step',
+        'global_sample_step', 'stage_key', 'stage_epoch_step',
+        'stage_batch_step', 'stage_sample_step', 'epoch_metrics',
+        'loader_key', 'loader_batch_step', 'loader_sample_step', 
+        'checkpointer_loader_key', 'checkpointer_metric_key',
+        'checkpointer_minimize', 'model_state_dict'])
+
+    To load the model weights, only use state_dict["model_state_dict"]
     """
-    model.load_state_dict(torch.load(weights_path)["model"])
+    state_dict = torch.load(weights_path)
+    # base model
+    if "model" in state_dict.keys():
+        key = "model"
+    # catalyst
+    elif "model_state_dict" in state_dict.keys():
+        key = "model_state_dict"
+
+    model.load_state_dict(state_dict[key])
 
 
 def create_test_transforms(maxes: List[float] = [4.61e-20, 4.23e-20, 1.11e-20],
