@@ -79,7 +79,9 @@ class Inferrer(object):
         # Single GPU inference
         for batch in self.test_loader:
             if not self.cpu_only:
-                assert "cuda" in batch[0].device
+                assert "cuda" in str(batch[0].device), \
+                    "device should be cuda but is: " + str(batch[0].device)
+                batch[0] = batch[0].cuda()
             pred = predict_binary(model, batch[0])
             # thresholding
             pred[pred >= self.threshold] = 1
