@@ -134,7 +134,7 @@ class Inferrer(MetricsTracker):
                     os.makedirs(dir_path)
                     print("Created directory: ", dir_path)
             except:
-                print(preds_dir, " and subdirs already exist!")
+                print(preds_dir, "and subdirs already exist!")
 
         print("Initialized Inferrer...")
 
@@ -220,8 +220,7 @@ class Inferrer(MetricsTracker):
             pos_idx = pred >= self.threshold
             if pos_idx.any():
                 pos_batch = use_pos_batches(batch[0], pos_idx)
-                pred[pos_idx] = predict_binary(base_model, pos_batch)
-
+                pred[pos_idx] = predict_binary(base_model, pos_batch).view(-1)
             pred = pred.detach().cpu().numpy()
             save_path = os.path.join(self.export_dir, "both_preds",
                                      f"pred{idx}.npy")
@@ -377,6 +376,7 @@ class GlobalEvaluator(MetricsTracker):
             return t.detach().cpu().numpy()
 
         y_true = np.ravel([to_cpu(batch[1]) for batch in self.test_loader])
+        num_labels = len(y_true)
         # Load predictions and evaluate
         paths = {
             "base": self.base_pred_paths,
@@ -386,7 +386,13 @@ class GlobalEvaluator(MetricsTracker):
 
         all_auc = {}
         for modelType, pathsList in paths.items():
-            y_pred = np.ravel([np.load(path) for path in pathsList])
+            y_pred = []
+            for path in pathsList:
+                arr = np.load(path)
+                # Skips overloaded batches
+                if len(arr) == self.test_loader.batch_size:
+                    y_pred.append(arr)
+            y_pred = np.ravel(y_pred)
             # Evaluate with all predictions
             auc = roc_auc_score(y_true, y_pred)
             all_auc.update({f"{modelType}_auc": auc})
