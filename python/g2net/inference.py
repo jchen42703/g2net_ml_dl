@@ -138,7 +138,7 @@ class Inferrer(MetricsTracker):
 
         print("Initialized Inferrer...")
 
-    def infer_single(self, model, metric_key):
+    def infer_single(self, model, fold: int, metric_key: str):
         if model == None:
             raise ValueError("model not defined")
 
@@ -152,7 +152,7 @@ class Inferrer(MetricsTracker):
             pred = predict_binary(model, batch[0],
                                   self.cpu_only).detach().cpu().numpy()
             save_path = os.path.join(self.export_dir, f"{metric_key}_preds",
-                                     f"pred{idx}.npy")
+                                     f"fold{fold}", f"pred{idx}.npy")
             np.save(save_path, pred)
 
         time_elapsed = self.timer.stop()
@@ -184,7 +184,7 @@ class Inferrer(MetricsTracker):
                      cpu_only=self.cpu_only)
         self.filter_model.eval()
 
-        return self.infer_single(self.filter_model, "filter")
+        return self.infer_single(self.filter_model, fold, "filter")
 
     def infer_base_only(self, fold) -> dict:
         """Infers with only the base model. Returns a dictionary of metrics
@@ -197,10 +197,10 @@ class Inferrer(MetricsTracker):
         self.base_model.eval()
 
         # Do inference
-        return self.infer_single(self.base_model, "base")
+        return self.infer_single(self.base_model, fold, "base")
 
     def infer_both(self, filter_model: torch.nn.Module,
-                   base_model: torch.nn.Module):
+                   base_model: torch.nn.Module, fold: int):
         """Inference that works with a general filter_model and base_model.
         Filter_model is recommended to be a torch model. Should be able to
         invoke filter_model(x) to generate batch.
@@ -225,7 +225,7 @@ class Inferrer(MetricsTracker):
                                                self.cpu_only).view(-1)
             pred = pred.detach().cpu().numpy()
             save_path = os.path.join(self.export_dir, "both_preds",
-                                     f"pred{idx}.npy")
+                                     f"fold{fold}", f"pred{idx}.npy")
             np.save(save_path, pred)
 
         time_elapsed = self.timer.stop()
@@ -242,7 +242,7 @@ class Inferrer(MetricsTracker):
         # Load models and weights
         mr_only_metrics = self.infer_minirocket_only(fold)
         base_only_metrics = self.infer_base_only(fold)
-        both_metrics = self.infer_both(self.filter_model, self.base_model)
+        both_metrics = self.infer_both(self.filter_model, self.base_model, fold)
         fold_metrics = {**mr_only_metrics, **base_only_metrics, **both_metrics}
         return fold_metrics
 
@@ -359,15 +359,25 @@ class GlobalEvaluator(MetricsTracker):
             ...
     """
 
-    def __init__(self, test_loader, base_preds_paths: List[str],
-                 filter_preds_paths: List[str], both_pred_paths: List[str]):
+    def __init__(self, test_loader, base_preds_paths: dict,
+                 filter_preds_paths: dict, both_pred_paths: dict):
+        """
+        Args:
+            base_preds_paths: dictionary with keys folds and values as lists to
+                .npy files for that fold
+                base_preds_paths = {
+                    0: [...],
+                    1: [...],
+                }
+        """
         # initializes the metric tracker
-        super().__init__(cols=["base_auc", "filter_auc", "both_auc"])
+        super().__init__(cols=["fold", "base_auc", "filter_auc", "both_auc"])
 
         self.test_loader = test_loader
         self.base_pred_paths = base_preds_paths
         self.filter_preds_paths = filter_preds_paths
         self.both_pred_paths = both_pred_paths
+        self.num_folds = len(self.base_pred_paths.keys())
 
         same_num = (len(both_pred_paths) != len(filter_preds_paths)) and \
                 (len(both_pred_paths) != len(both_pred_paths))
@@ -377,7 +387,7 @@ class GlobalEvaluator(MetricsTracker):
 
         print("Evaluator initialized... ")
 
-    def evaluate_all(self):
+    def evaluate_fold(self, fold: int):
         # Load all test data into y_true
         def to_cpu(t: torch.Tensor):
             return t.detach().cpu().numpy()
@@ -386,9 +396,9 @@ class GlobalEvaluator(MetricsTracker):
         num_labels = len(y_true)
         # Load predictions and evaluate
         paths = {
-            "base": self.base_pred_paths,
-            "filter": self.filter_preds_paths,
-            "both": self.both_pred_paths
+            "base": self.base_pred_paths[fold],
+            "filter": self.filter_preds_paths[fold],
+            "both": self.both_pred_paths[fold]
         }
 
         all_auc = {}
@@ -402,10 +412,17 @@ class GlobalEvaluator(MetricsTracker):
             y_pred = np.ravel(y_pred)
             # Evaluate with all predictions
             auc = roc_auc_score(y_true, y_pred)
-            all_auc.update({f"{modelType}_auc": auc})
+            all_auc.update({"fold": fold, f"{modelType}_auc": auc})
 
         # Append to dataframe
         self.metrics = self.metrics.append(all_auc, ignore_index=True)
-        print("Evaluation results: \n", self.metrics)
-
         return all_auc
+
+    def evaluate_all(self):
+        """Computes the evaluation for all folds.
+        """
+        for fold in range(self.num_folds):
+            self.evaluate_fold(fold)
+
+        self.compute_avg_stats()
+        print("Evaluation results: \n", self.metrics)

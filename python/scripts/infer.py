@@ -41,12 +41,22 @@ if __name__ == "__main__":
     csv_path = os.path.join(cfg["export_dir"], "inference_times.csv")
     inferrer.metrics.to_csv(csv_path)
 
-    base_model_paths = glob(
-        os.path.join(cfg["export_dir"], "base_preds", "*.npy"))
-    filter_preds_paths = glob(
-        os.path.join(cfg["export_dir"], "filter_preds", "*.npy"))
-    both_preds_paths = glob(
-        os.path.join(cfg["export_dir"], "both_preds", "*.npy"))
+    num_folds = len(cfg["base_model_paths"])
+    base_model_paths = {
+        fold: glob(
+            os.path.join(cfg["export_dir"], "base_preds", f"fold{fold}",
+                         "*.npy")) for fold in range(num_folds)
+    }
+    filter_preds_paths = {
+        fold: glob(
+            os.path.join(cfg["export_dir"], "filter_preds", f"fold{fold}",
+                         "*.npy")) for fold in range(num_folds)
+    }
+    both_preds_paths = {
+        fold: glob(
+            os.path.join(cfg["export_dir"], "both_preds", f"fold{fold}",
+                         "*.npy")) for fold in range(num_folds)
+    }
 
     evaluator = GlobalEvaluator(test_loader, base_model_paths,
                                 filter_preds_paths, both_preds_paths)
