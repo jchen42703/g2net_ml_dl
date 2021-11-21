@@ -1,4 +1,5 @@
 import os
+from pprint import pprint
 import numpy as np
 import pandas as pd
 import torch
@@ -129,7 +130,9 @@ class Inferrer(MetricsTracker):
             preds_dir = os.path.join(self.export_dir, dir)
             try:
                 for fold in range(self.num_folds):
-                    os.makedirs(os.path.join(preds_dir, f"fold{fold}"))
+                    dir_path = os.path.join(preds_dir, f"fold{fold}")
+                    os.makedirs(dir_path)
+                    print("Created directory: ", dir_path)
             except:
                 print(preds_dir, " and subdirs already exist!")
 
@@ -202,7 +205,6 @@ class Inferrer(MetricsTracker):
         invoke filter_model(x) to generate batch.
         """
         self.timer.start(verbose=False)
-        all_auc = []
 
         def use_pos_batches(x: torch.Tensor, batches_mask: torch.Tensor):
             pos_idx = [
@@ -253,6 +255,8 @@ class Inferrer(MetricsTracker):
             self.metrics = self.metrics.append(fold_metrics, ignore_index=True)
 
         self.compute_avg_stats()
+
+        print("Inference results: \n", self.metrics)
 
 
 def predict_binary(model, x: torch.Tensor) -> torch.Tensor:
@@ -326,7 +330,7 @@ def create_test_dataloader(test_df: pd.DataFrame,
     return test_loader
 
 
-class GlobalEvaluator(object):
+class GlobalEvaluator(MetricsTracker):
     """Designed to save predictions (specifically AUC) for entire predictions.
 
     Flow for each fold:
@@ -351,6 +355,9 @@ class GlobalEvaluator(object):
 
     def __init__(self, test_loader, base_preds_paths: List[str],
                  filter_preds_paths: List[str], both_pred_paths: List[str]):
+        # initializes the metric tracker
+        super().__init__(cols=["base_auc", "filter_auc", "both_auc"])
+
         self.test_loader = test_loader
         self.base_pred_paths = base_preds_paths
         self.filter_preds_paths = filter_preds_paths
@@ -362,19 +369,14 @@ class GlobalEvaluator(object):
             raise ValueError(
                 "Number of predictions should be the same for each model")
 
-        self.cols = [
-            "base_auc",
-            "filter_auc",
-            "both_auc",
-        ]
-        print("Evaluator is tracking ", self.cols)
-        # To get averages, do self.metrics.mean()
-        self.metrics = pd.DataFrame(columns=self.cols)
+        print("Evaluator initialized... ")
 
     def evaluate_all(self):
         # Load all test data into y_true
-        y_true = torch.ravel([batch for batch in self.test_loader
-                             ]).detach().cpu().numpy()
+        def to_cpu(t: torch.Tensor):
+            return t.detach().cpu().numpy()
+
+        y_true = np.ravel([to_cpu(batch[1]) for batch in self.test_loader])
         # Load predictions and evaluate
         paths = {
             "base": self.base_pred_paths,
@@ -382,12 +384,15 @@ class GlobalEvaluator(object):
             "both": self.both_pred_paths
         }
 
-        metrics = {}
+        all_auc = {}
         for modelType, pathsList in paths.items():
             y_pred = np.ravel([np.load(path) for path in pathsList])
             # Evaluate with all predictions
             auc = roc_auc_score(y_true, y_pred)
-            metrics.update({f"{modelType}_auc": auc})
+            all_auc.update({f"{modelType}_auc": auc})
 
         # Append to dataframe
-        self.metrics.append(metrics, ignore_index=True)
+        self.metrics = self.metrics.append(all_auc, ignore_index=True)
+        print("Evaluation results: \n", self.metrics)
+
+        return all_auc
