@@ -1,11 +1,11 @@
 infer_config:
   dset_dir: "${HOME}/final_project/data"
-  export_dir: "${HOME}/final_project/data"
+  export_dir: "${PFSDIR}"
   threshold: 0.5
   # df.iloc[idx_start:idx_end]
   idx_start: 30000
   idx_end: 37168
-  batch_size: 512
+  batch_size: 8
   num_workers: 8
   cpu_only: False
   base_model_paths:
