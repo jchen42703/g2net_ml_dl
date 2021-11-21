@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -p class --gres=gpu:1 -A sxg125_csds438
 #SBATCH -c 8
-#SBATCH --mem=25gb
+#SBATCH --mem=40gb
 
 module swap intel gcc
 
