@@ -149,7 +149,8 @@ class Inferrer(MetricsTracker):
             if not self.cpu_only:
                 batch[0] = batch[0].cuda()
 
-            pred = predict_binary(model, batch[0]).detach().cpu().numpy()
+            pred = predict_binary(model, batch[0],
+                                  self.cpu_only).detach().cpu().numpy()
             save_path = os.path.join(self.export_dir, f"{metric_key}_preds",
                                      f"pred{idx}.npy")
             np.save(save_path, pred)
@@ -215,12 +216,13 @@ class Inferrer(MetricsTracker):
 
         # Single GPU inference
         for idx, batch in enumerate(self.test_loader):
-            pred = predict_binary(filter_model, batch[0])
+            pred = predict_binary(filter_model, batch[0], self.cpu_only)
             # indices of the batch that the model thought were GWs
             pos_idx = pred >= self.threshold
             if pos_idx.any():
                 pos_batch = use_pos_batches(batch[0], pos_idx)
-                pred[pos_idx] = predict_binary(base_model, pos_batch).view(-1)
+                pred[pos_idx] = predict_binary(base_model, pos_batch,
+                                               self.cpu_only).view(-1)
             pred = pred.detach().cpu().numpy()
             save_path = os.path.join(self.export_dir, "both_preds",
                                      f"pred{idx}.npy")
@@ -258,7 +260,9 @@ class Inferrer(MetricsTracker):
         print("Inference results: \n", self.metrics)
 
 
-def predict_binary(model, x: torch.Tensor) -> torch.Tensor:
+def predict_binary(model,
+                   x: torch.Tensor,
+                   cpu_only: bool = False) -> torch.Tensor:
     """Assumes that the model returns logits. The output activation function is
     sigmoid.
 
@@ -267,7 +271,10 @@ def predict_binary(model, x: torch.Tensor) -> torch.Tensor:
         x: the input batch
     """
     sigmoid = torch.nn.Sigmoid()
-    return sigmoid(model(x))
+    if not cpu_only:
+        return sigmoid(model(x.cuda()))
+    else:
+        return sigmoid(model(x))
 
 
 def load_weights(model: torch.nn.Module,
