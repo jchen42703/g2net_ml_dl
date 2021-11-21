@@ -78,6 +78,8 @@ class Inferrer(object):
         all_auc = []
         # Single GPU inference
         for batch in self.test_loader:
+            if not self.cpu_only:
+                assert "cuda" in batch[0].device
             pred = predict_binary(model, batch[0])
             # thresholding
             pred[pred >= self.threshold] = 1
@@ -262,6 +264,10 @@ def load_weights(model: torch.nn.Module,
         key = "model_state_dict"
 
     model.load_state_dict(state_dict[key])
+
+    if not cpu_only:
+        device = torch.device("cuda")
+        model.to(device)
 
 
 def create_test_transforms(maxes: List[float] = [4.61e-20, 4.23e-20, 1.11e-20],
