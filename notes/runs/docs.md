@@ -29,3 +29,22 @@ GPU Usage still quite low.
 ![](images/installation.png)
 
 ![](images/batch_training.png)
+
+# Inference
+
+**Job ID:** 16640414
+
+- batch_size = OOM
+
+**Job ID:** 16640594
+
+- batch_size = 64
+- OOM
+
+**Job ID:** 16640621
+
+**Job ID:** 16640826
+
+## Fixed Eval Pipeline
+
+**Job ID:** 16641075
